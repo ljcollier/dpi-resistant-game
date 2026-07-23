@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DPI Evading Custom Game</title>
+    <style>
+        body { text-align: center; font-family: sans-serif; background: #222; color: #fff; }
+        canvas { border: 4px solid #444; background: #111; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Use Arrow Keys to Move</h1>
+    <canvas id="gameCanvas" width="500" height="500"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Connect to your local server
+const ws = new WebSocket('wss://dpi-resistant-game.onrender.com');
+
+        // Give yourself a random ID and starting spot
+        let myPlayer = { 
+            id: Math.random().toString(36).substring(7), 
+            x: 250, 
+            y: 250, 
+            color: 'cyan' 
+        };
+        let remotePlayers = {};
+
+        // Send your position to the server as a harmless JSON string
+        function sendPosition() {
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: "pos",
+                    id: myPlayer.id,
+                    x: myPlayer.x,
+                    y: myPlayer.y
+                }));
+            }
+        }
+
+        // Listen for other players moving
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.type === "pos") {
+                remotePlayers[data.id] = { x: data.x, y: data.y };
+            }
+        };
+
+        // Draw the game screen constantly
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw your square
+            ctx.fillStyle = myPlayer.color;
+            ctx.fillRect(myPlayer.x, myPlayer.y, 25, 25);
+
+            // Draw other squares (red)
+            ctx.fillStyle = 'red';
+            for (let id in remotePlayers) {
+                ctx.fillRect(remotePlayers[id].x, remotePlayers[id].y, 25, 25);
+            }
+            requestAnimationFrame(draw);
+        }
+
+        // Listen for keyboard movement buttons
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowUp') myPlayer.y -= 10;
+            if (e.key === 'ArrowDown') myPlayer.y += 10;
+            if (e.key === 'ArrowLeft') myPlayer.x -= 10;
+            if (e.key === 'ArrowRight') myPlayer.x += 10;
+            sendPosition();
+        });
+
+        draw();
+    </script>
+</body>
+</html>
