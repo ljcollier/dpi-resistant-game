@@ -1,7 +1,8 @@
 const { WebSocketServer } = require('ws');
 
 // Create the backend WebSocket server on port 8080
-const wss = new WebSocketServer({ port: 8080 });
+// Automatically use Render's dynamic system port or fallback to 8080 locally
+const wss = new WebSocketServer({ port: process.env.PORT || 8080 });
 const clients = new Set();
 
 wss.on('connection', (ws) => {
